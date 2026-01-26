@@ -1,10 +1,12 @@
 package backend.biddingwars.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,18 +18,19 @@ import java.util.List;
 /**
  * User entity representing a user.
  * Implements UserDetails for Spring Security integration.
+ * Extends BaseEntity to inherit audit fields (createdAt, updatedAt) and optimistic locking (version).
  * Includes fields for username, email, name, password, role, and enabled status.
  * Uses JPA annotations for ORM mapping and validation annotations for field constraints.
- * Lombok @Getter annotation is used to generate getter methods.
  *
  * @author Oleander Tengesdal
  * @version 1.0
  * @since 26-01-2026
  */
 @Entity
-@Getter
+@Data
+@EqualsAndHashCode(callSuper = true)
 @Table(name = "users")
-public class User implements UserDetails {
+public class User extends BaseEntity implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,6 +42,8 @@ public class User implements UserDetails {
     @Column(unique = true, nullable = false, length = 50)
     private String username;
 
+    @NotBlank
+    @Email
     @Column(unique = true, nullable = false)
     private String email;
 
@@ -56,7 +61,8 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
-    @NotBlank
+    @NotNull
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
 
@@ -65,7 +71,7 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return List.of(role);
     }
 
     @Override
@@ -95,6 +101,8 @@ public class User implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return UserDetails.super.isEnabled();
+        return enabled;
     }
+
+
 }
