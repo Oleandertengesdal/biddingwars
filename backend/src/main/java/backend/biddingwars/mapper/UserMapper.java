@@ -1,4 +1,4 @@
 package backend.biddingwars.mapper;
 
-public class ItemMapper {
+public class UserMapper {
 }
