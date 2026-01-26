@@ -1,6 +1,7 @@
 package backend.biddingwars.mapper;
 
 import backend.biddingwars.model.Category;
+import org.springframework.stereotype.Component;
 
 /**
  * Mapper class for Category entity.
@@ -9,15 +10,20 @@ import backend.biddingwars.model.Category;
  * @version 1.0
  * @since 26-01-2026
  */
+@Component
 public class CategoryMapper {
 
-    public Category toEntity(String categoryName) {
+    public Category toEntity(Category categoryDto) {
         Category category = new Category();
-        category.setName(categoryName);
+        category.setId(categoryDto.getId());
+        category.setName(categoryDto.getName());
         return category;
     }
 
-    public String toDto(Category category) {
-        return category.getName();
+    public Category toDto(Category category) {
+        Category categoryDto = new Category();
+        categoryDto.setId(category.getId());
+        categoryDto.setName(category.getName());
+        return categoryDto;
     }
 }
