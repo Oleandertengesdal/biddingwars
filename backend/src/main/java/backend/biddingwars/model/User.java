@@ -12,6 +12,18 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.List;
 
+
+/**
+ * User entity representing a user.
+ * Implements UserDetails for Spring Security integration.
+ * Includes fields for username, email, name, password, role, and enabled status.
+ * Uses JPA annotations for ORM mapping and validation annotations for field constraints.
+ * Lombok @Getter annotation is used to generate getter methods.
+ *
+ * @author Oleander Tengesdal
+ * @version 1.0
+ * @since 26-01-2026
+ */
 @Entity
 @Getter
 @Table(name = "users")
