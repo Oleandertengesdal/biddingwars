@@ -51,8 +51,6 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private boolean enabled;
 
-
-
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of();
