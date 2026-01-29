@@ -10,6 +10,9 @@ import jakarta.validation.constraints.NotBlank;
  * @since 26-01-2026
  */
 public record LoginRequestDTO(
-        @NotBlank String username,
-        @NotBlank String password
+        @NotBlank(message = "Username is required")
+        String username,
+
+        @NotBlank(message = "Password is required")
+        String password
 ) {}

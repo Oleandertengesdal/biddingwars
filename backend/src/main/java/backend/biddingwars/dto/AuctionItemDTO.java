@@ -1,5 +1,8 @@
 package backend.biddingwars.dto;
 
+import jakarta.validation.constraints.NotNull;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -12,7 +15,7 @@ import java.time.LocalDateTime;
 public record AuctionItemDTO(
         Long id,
         String title,
-        Double currentPrice,
+        BigDecimal currentPrice,
         String thumbnailUrl,
         LocalDateTime endTime,
         int bidCount

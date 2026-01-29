@@ -14,7 +14,6 @@ public record BidDTO(
         Long id,
         BigDecimal amount,
         Long bidderId,
-        String bidderUsername,
         Long itemId,
         LocalDateTime timestamp
 ) {}

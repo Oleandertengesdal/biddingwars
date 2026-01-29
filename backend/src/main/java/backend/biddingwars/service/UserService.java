@@ -5,16 +5,10 @@ import backend.biddingwars.model.User;
 
 /**
  * Service class for user-related operations.
+ *
+ * @author oleander tengesdal
+ * @version 1.0
+ * @since 29-01-2026
  */
 public class UserService {
-    public UserDTO convertToDTO(User user) {
-        return new UserDTO(
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getRole()
-        );
-    }
 }
