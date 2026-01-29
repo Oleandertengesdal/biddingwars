@@ -1,5 +1,6 @@
 package backend.biddingwars.mapper;
 
+import backend.biddingwars.dto.CategoryDTO;
 import backend.biddingwars.model.Category;
 import org.springframework.stereotype.Component;
 
@@ -20,10 +21,10 @@ public class CategoryMapper {
         return category;
     }
 
-    public Category toDto(Category category) {
-        Category categoryDto = new Category();
-        categoryDto.setId(category.getId());
-        categoryDto.setName(category.getName());
-        return categoryDto;
+    public CategoryDTO toDto(Category category) {
+        return new CategoryDTO(
+                category.getId(),
+                category.getName()
+        );
     }
 }
