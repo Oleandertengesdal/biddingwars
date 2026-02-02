@@ -26,7 +26,7 @@ public record AuctionItemDetailDTO(
         Long sellerId,
         List<String> categoryNames,
         List<String> imageUrls,
-        Status status,
+        String status,
         int bidCount,
         Double latitude,
         Double longitude,

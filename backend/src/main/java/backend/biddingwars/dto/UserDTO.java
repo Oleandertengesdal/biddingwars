@@ -18,6 +18,6 @@ public record UserDTO(
         String email,
         String firstName,
         String lastName,
-        Role role,
+        String role,
         LocalDateTime createdAt
 ) {}

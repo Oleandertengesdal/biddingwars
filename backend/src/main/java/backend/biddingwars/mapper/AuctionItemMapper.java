@@ -104,7 +104,9 @@ public class AuctionItemMapper {
                 auctionItem.getImageUrls() != null 
                         ? auctionItem.getImageUrls() 
                         : List.of(),
-                auctionItem.getStatus(),
+                auctionItem.getStatus() != null 
+                        ? auctionItem.getStatus().name() 
+                        : null,
                 auctionItem.getBids() != null ? auctionItem.getBids().size() : 0,
                 auctionItem.getLatitude(),
                 auctionItem.getLongitude(),
