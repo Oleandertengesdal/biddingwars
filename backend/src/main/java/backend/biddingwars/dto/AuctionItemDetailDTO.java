@@ -12,7 +12,7 @@ import backend.biddingwars.model.Status;
  *
  * @author Oleander Tengesdal
  * @version 1.1
- * @since 26-01-2026
+ * @since 02-02-2026
  */
 public record AuctionItemDetailDTO(
         Long id,

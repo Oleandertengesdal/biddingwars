@@ -19,8 +19,8 @@ import java.util.List;
  * - Request DTO to entity (for creating new auctions)
  *
  * @author Oleander Tengesdal
- * @version 1.0
- * @since 26-01-2026
+ * @version 1.1
+ * @since 02-02-2026
  */
 @Component
 public class AuctionItemMapper {
