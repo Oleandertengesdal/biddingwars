@@ -1,11 +1,9 @@
 package backend.biddingwars.mapper;
 
-import backend.biddingwars.dto.BidDTO;
-import backend.biddingwars.model.Bid;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import backend.biddingwars.dto.BidDTO;
+import backend.biddingwars.model.Bid;
 
 /**
  * Mapper class for Bid entity.
@@ -18,22 +16,16 @@ import java.time.LocalDateTime;
 public class BidMapper {
 
     public BidDTO toDTO(Bid bid) {
+        if (bid == null) {
+            return null;
+        }
         return new BidDTO(
                 bid.getId(),
                 bid.getAmount(),
-                bid.getBidder().getId(),
-                bid.getAuctionItem().getId(),
+                bid.getBidder() != null ? bid.getBidder().getId() : null,
+                bid.getBidder() != null ? bid.getBidder().getUsername() : null,
+                bid.getAuctionItem() != null ? bid.getAuctionItem().getId() : null,
                 bid.getTimestamp()
         );
-    }
-
-    public Bid toEntity(BidDTO bidDTO) {
-        Bid bid = new Bid();
-        bid.setId(bidDTO.id());
-        bid.setAmount(bidDTO.amount());
-        // Note: Setting bidder and auctionItem should be handled separately
-        // TODO: Implement fetching bidder and auctionItem entities based on their IDs
-        bid.setTimestamp(bidDTO.timestamp() != null ? bidDTO.timestamp() : LocalDateTime.now());
-        return bid;
     }
 }

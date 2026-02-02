@@ -1,8 +1,9 @@
 package backend.biddingwars.mapper;
 
+import org.springframework.stereotype.Component;
+
 import backend.biddingwars.dto.UserDTO;
 import backend.biddingwars.model.User;
-import org.springframework.stereotype.Component;
 
 /**
  * Mapper class for converting between User entities and UserDTOs.
@@ -14,25 +15,18 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserMapper {
 
-    public UserDTO ToDTO(User user) {
+    public UserDTO toDTO(User user) {
+        if (user == null) {
+            return null;
+        }
         return new UserDTO(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getFirstName(),
                 user.getLastName(),
-                user.getRole()
+                user.getRole(),
+                user.getCreatedAt()
         );
-    }
-
-    public User ToEntity(UserDTO userDTO) {
-        User user = new User();
-        user.setId(userDTO.id());
-        user.setUsername(userDTO.username());
-        user.setEmail(userDTO.email());
-        user.setFirstName(userDTO.firstName());
-        user.setLastName(userDTO.lastName());
-        user.setRole(userDTO.role());
-        return user;
     }
 }
