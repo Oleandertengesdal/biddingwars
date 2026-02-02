@@ -107,7 +107,9 @@ public class AuctionItemMapper {
                 auctionItem.getStatus(),
                 auctionItem.getBids() != null ? auctionItem.getBids().size() : 0,
                 auctionItem.getLatitude(),
-                auctionItem.getLongitude()
+                auctionItem.getLongitude(),
+                auctionItem.getStatus() == Status.ACTIVE && 
+                        auctionItem.getAuctionEndTime().isAfter(java.time.LocalDateTime.now())
         );
     }
 

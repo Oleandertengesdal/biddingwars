@@ -36,6 +36,13 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
+    /**
+     * Get token validity in milliseconds.
+     */
+    public long getTokenValidityMs() {
+        return tokenValidityMs;
+    }
+
     public String generateToken(Long userId, String username) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + tokenValidityMs);

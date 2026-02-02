@@ -1,16 +1,17 @@
 package backend.biddingwars.dto;
 
-import backend.biddingwars.model.Status;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import backend.biddingwars.model.Status;
+
 /**
- * Auction Item Detail Data Transfer Object
+ * Auction Item Detail Data Transfer Object.
+ * Contains full auction details for single item view.
  *
  * @author Oleander Tengesdal
- * @version 1.0
+ * @version 1.1
  * @since 26-01-2026
  */
 public record AuctionItemDetailDTO(
@@ -28,5 +29,6 @@ public record AuctionItemDetailDTO(
         Status status,
         int bidCount,
         Double latitude,
-        Double longitude
+        Double longitude,
+        boolean isActive
 ) {}
