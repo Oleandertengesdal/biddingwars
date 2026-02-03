@@ -1,12 +1,7 @@
 package backend.biddingwars.service;
 
-import backend.biddingwars.dto.RegisterRequestDTO;
-import backend.biddingwars.dto.UserDTO;
-import backend.biddingwars.mapper.UserMapper;
-import backend.biddingwars.model.Role;
-import backend.biddingwars.model.User;
-import backend.biddingwars.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,7 +11,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import backend.biddingwars.dto.RegisterRequestDTO;
+import backend.biddingwars.dto.UserDTO;
+import backend.biddingwars.exception.DuplicateResourceException;
+import backend.biddingwars.exception.ResourceNotFoundException;
+import backend.biddingwars.exception.ValidationException;
+import backend.biddingwars.mapper.UserMapper;
+import backend.biddingwars.model.Role;
+import backend.biddingwars.model.User;
+import backend.biddingwars.repository.UserRepository;
 
 /**
  * Service class for user-related operations.
@@ -66,19 +69,19 @@ public class UserService implements UserDetailsService {
      *
      * @param registerRequest the registration data
      * @return the created user as DTO
-     * @throws IllegalArgumentException if username or email already exists
+     * @throws DuplicateResourceException if username or email already exists
      */
     public UserDTO registerUser(RegisterRequestDTO registerRequest) {
         logger.info("Registering new user: {}", registerRequest.username());
 
         // Check for existing username
         if (userRepository.existsByUsername(registerRequest.username())) {
-            throw new IllegalArgumentException("Username already exists: " + registerRequest.username());
+            throw new DuplicateResourceException("User", "username", registerRequest.username());
         }
 
         // Check for existing email
         if (userRepository.existsByEmail(registerRequest.email())) {
-            throw new IllegalArgumentException("Email already registered: " + registerRequest.email());
+            throw new DuplicateResourceException("User", "email", registerRequest.email());
         }
 
         // Create new user
@@ -102,7 +105,7 @@ public class UserService implements UserDetailsService {
      *
      * @param id the user ID
      * @return the user as DTO
-     * @throws EntityNotFoundException if user not found
+     * @throws ResourceNotFoundException if user not found
      */
     @Transactional(readOnly = true)
     public UserDTO getUserById(Long id) {
@@ -115,12 +118,12 @@ public class UserService implements UserDetailsService {
      *
      * @param username the username
      * @return the user as DTO
-     * @throws EntityNotFoundException if user not found
+     * @throws ResourceNotFoundException if user not found
      */
     @Transactional(readOnly = true)
     public UserDTO getUserByUsername(String username) {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new EntityNotFoundException("User not found: " + username));
+                .orElseThrow(() -> new ResourceNotFoundException("User", username));
         return userMapper.toDTO(user);
     }
 
@@ -150,7 +153,7 @@ public class UserService implements UserDetailsService {
 
         // Check if email is being changed and if it's already in use
         if (!user.getEmail().equals(email) && userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("Email already in use: " + email);
+            throw new DuplicateResourceException("User", "email", email);
         }
 
         user.setFirstName(firstName);
@@ -169,13 +172,13 @@ public class UserService implements UserDetailsService {
      * @param id the user ID
      * @param currentPassword the current password for verification
      * @param newPassword the new password
-     * @throws IllegalArgumentException if current password is incorrect
+     * @throws ValidationException if current password is incorrect
      */
     public void changePassword(Long id, String currentPassword, String newPassword) {
         User user = findUserOrThrow(id);
 
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
-            throw new IllegalArgumentException("Current password is incorrect");
+            throw new ValidationException("Current password is incorrect");
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -215,6 +218,6 @@ public class UserService implements UserDetailsService {
      */
     public User findUserOrThrow(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("User not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("User", id));
     }
 }

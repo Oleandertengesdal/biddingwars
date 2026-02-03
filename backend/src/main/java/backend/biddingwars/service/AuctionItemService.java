@@ -1,17 +1,8 @@
 package backend.biddingwars.service;
 
-import backend.biddingwars.dto.AuctionItemDTO;
-import backend.biddingwars.dto.AuctionItemDetailDTO;
-import backend.biddingwars.dto.AuctionItemRequestDTO;
-import backend.biddingwars.mapper.AuctionItemMapper;
-import backend.biddingwars.model.AuctionItem;
-import backend.biddingwars.model.Category;
-import backend.biddingwars.model.Status;
-import backend.biddingwars.model.User;
-import backend.biddingwars.repository.AuctionItemRepository;
-import backend.biddingwars.repository.CategoryRepository;
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.OptimisticLockException;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -19,8 +10,21 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import backend.biddingwars.dto.AuctionItemDTO;
+import backend.biddingwars.dto.AuctionItemDetailDTO;
+import backend.biddingwars.dto.AuctionItemRequestDTO;
+import backend.biddingwars.exception.InvalidOperationException;
+import backend.biddingwars.exception.ResourceNotFoundException;
+import backend.biddingwars.exception.UnauthorizedException;
+import backend.biddingwars.exception.ValidationException;
+import backend.biddingwars.mapper.AuctionItemMapper;
+import backend.biddingwars.model.AuctionItem;
+import backend.biddingwars.model.Category;
+import backend.biddingwars.model.Status;
+import backend.biddingwars.model.User;
+import backend.biddingwars.repository.AuctionItemRepository;
+import backend.biddingwars.repository.CategoryRepository;
+import jakarta.persistence.OptimisticLockException;
 
 /**
  * Service class for auction item operations.
@@ -55,7 +59,7 @@ public class AuctionItemService {
      * @param requestDTO the auction item data
      * @param owner the user creating the auction
      * @return the created auction as a detail DTO
-     * @throws IllegalArgumentException if end time is before start time
+     * @throws ValidationException if end time is before start time or categories are invalid
      */
     public AuctionItemDetailDTO createAuction(AuctionItemRequestDTO requestDTO, User owner) {
         logger.info("Creating new auction '{}' for user {}", requestDTO.title(), owner.getUsername());
@@ -78,7 +82,7 @@ public class AuctionItemService {
         if (requestDTO.categoryIds() != null && !requestDTO.categoryIds().isEmpty()) {
             List<Category> categories = categoryRepository.findAllById(requestDTO.categoryIds());
             if (categories.size() != requestDTO.categoryIds().size()) {
-                throw new IllegalArgumentException("One or more category IDs are invalid");
+                throw new ValidationException("One or more category IDs are invalid");
             }
             auctionItem.setCategories(categories);
         }
@@ -176,25 +180,25 @@ public class AuctionItemService {
      * @param requestDTO the updated auction data
      * @param currentUser the user making the request
      * @return the updated auction detail DTO
-     * @throws EntityNotFoundException if auction not found
-     * @throws IllegalStateException if auction cannot be updated
-     * @throws SecurityException if user is not the owner
+     * @throws ResourceNotFoundException if auction not found
+     * @throws InvalidOperationException if auction cannot be updated
+     * @throws UnauthorizedException if user is not the owner
      */
     public AuctionItemDetailDTO updateAuction(Long id, AuctionItemRequestDTO requestDTO, User currentUser) {
         AuctionItem auctionItem = findAuctionOrThrow(id);
 
         // Check ownership
         if (!auctionItem.getOwner().getId().equals(currentUser.getId())) {
-            throw new SecurityException("You can only update your own auctions");
+            throw new UnauthorizedException("You can only update your own auctions");
         }
 
         // Check if auction can be updated
         if (auctionItem.getBids() != null && !auctionItem.getBids().isEmpty()) {
-            throw new IllegalStateException("Cannot update auction that has bids");
+            throw new InvalidOperationException("Cannot update auction that has bids");
         }
 
         if (auctionItem.getAuctionEndTime().isBefore(LocalDateTime.now())) {
-            throw new IllegalStateException("Cannot update ended auction");
+            throw new InvalidOperationException("Cannot update ended auction");
         }
 
         // Validate time constraints
@@ -215,7 +219,7 @@ public class AuctionItemService {
             return auctionItemMapper.toDetailDTO(savedItem);
         } catch (OptimisticLockException e) {
             logger.warn("Concurrent update detected for auction {}", id);
-            throw new IllegalStateException("Auction was modified by another user. Please refresh and try again.");
+            throw new InvalidOperationException("Auction was modified by another user. Please refresh and try again.");
         }
     }
 
@@ -231,7 +235,7 @@ public class AuctionItemService {
         AuctionItem auctionItem = findAuctionOrThrow(id);
 
         if (!auctionItem.getOwner().getId().equals(currentUser.getId())) {
-            throw new SecurityException("You can only add images to your own auctions");
+            throw new UnauthorizedException("You can only add images to your own auctions");
         }
 
         auctionItem.getImageUrls().addAll(imageUrls);
@@ -250,9 +254,9 @@ public class AuctionItemService {
      * @param id the auction ID
      * @param currentUser the user making the request
      * @param isAdmin whether the current user is an admin
-     * @throws EntityNotFoundException if auction not found
-     * @throws IllegalStateException if auction cannot be deleted
-     * @throws SecurityException if user is not authorized
+     * @throws ResourceNotFoundException if auction not found
+     * @throws InvalidOperationException if auction cannot be deleted
+     * @throws UnauthorizedException if user is not authorized
      */
     public void deleteAuction(Long id, User currentUser, boolean isAdmin) {
         AuctionItem auctionItem = findAuctionOrThrow(id);
@@ -260,12 +264,12 @@ public class AuctionItemService {
         boolean isOwner = auctionItem.getOwner().getId().equals(currentUser.getId());
 
         if (!isOwner && !isAdmin) {
-            throw new SecurityException("You can only delete your own auctions");
+            throw new UnauthorizedException("You can only delete your own auctions");
         }
 
         // Non-admin owners cannot delete auctions with bids
         if (!isAdmin && auctionItem.getBids() != null && !auctionItem.getBids().isEmpty()) {
-            throw new IllegalStateException("Cannot delete auction that has bids. Contact admin for assistance.");
+            throw new InvalidOperationException("Cannot delete auction that has bids. Contact admin for assistance.");
         }
 
         auctionItemRepository.delete(auctionItem);
@@ -341,7 +345,7 @@ public class AuctionItemService {
             } catch (Exception e) {
                 logger.error("Error processing expired auction {}: {}", auction.getId(), e.getMessage());
             }
-        }
+        }   
 
         if (!expiredAuctions.isEmpty()) {
             logger.info("Processed {} expired auctions", expiredAuctions.size());
@@ -351,11 +355,11 @@ public class AuctionItemService {
     // ==================== HELPER METHODS ====================
 
     /**
-     * Finds an auction by ID or throws EntityNotFoundException.
+     * Finds an auction by ID or throws ResourceNotFoundException.
      */
     private AuctionItem findAuctionOrThrow(Long id) {
         return auctionItemRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Auction not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Auction", id));
     }
 
     /**
@@ -363,7 +367,7 @@ public class AuctionItemService {
      */
     private void validateAuctionTimes(LocalDateTime startTime, LocalDateTime endTime) {
         if (endTime.isBefore(startTime) || endTime.isEqual(startTime)) {
-            throw new IllegalArgumentException("Auction end time must be after start time");
+            throw new ValidationException("Auction end time must be after start time");
         }
     }
 }

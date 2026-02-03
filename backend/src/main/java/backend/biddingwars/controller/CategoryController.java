@@ -11,12 +11,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import backend.biddingwars.dto.CategoryDTO;
+import backend.biddingwars.exception.CategoryNotFoundException;
 import backend.biddingwars.mapper.CategoryMapper;
 import backend.biddingwars.model.Category;
 import backend.biddingwars.repository.CategoryRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.persistence.EntityNotFoundException;
 
 /**
  * REST Controller for category endpoints.
@@ -55,7 +55,7 @@ public class CategoryController {
                 .toList();
 
         logger.info("Fetched all categories, total count: {}.", categoryDTOs.size());
-        
+
         return ResponseEntity.ok(categoryDTOs);
     }
 
@@ -69,7 +69,7 @@ public class CategoryController {
     @Operation(summary = "Get category by ID", description = "Returns a specific category")
     public ResponseEntity<CategoryDTO> getCategoryById(@PathVariable Long id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Category not found with ID: " + id));
+                .orElseThrow(() -> new CategoryNotFoundException("Category not found with ID: " + id));
         
         logger.info("Fetched category with id {}.", id);
         return ResponseEntity.ok(categoryMapper.toDto(category));

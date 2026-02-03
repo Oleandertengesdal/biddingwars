@@ -1,15 +1,5 @@
 package backend.biddingwars.service;
 
-import jakarta.annotation.PostConstruct;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
-import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
@@ -19,6 +9,18 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+
+import backend.biddingwars.exception.FileStorageException;
+import jakarta.annotation.PostConstruct;
 
 /**
  * Service for handling file upload and storage.
@@ -51,7 +53,7 @@ public class FileStorageService {
             Files.createDirectories(uploadPath);
             logger.info("Upload directory initialized: {}", uploadPath);
         } catch (IOException e) {
-            throw new RuntimeException("Could not create upload directory", e);
+            throw new FileStorageException("Could not create upload directory", e);
         }
     }
 
@@ -60,8 +62,7 @@ public class FileStorageService {
      *
      * @param file the file to store
      * @return the stored filename (UUID-based)
-     * @throws IllegalArgumentException if file is invalid
-     * @throws RuntimeException if file cannot be stored
+     * @throws FileStorageException if file is invalid or cannot be stored
      */
     public String storeFile(MultipartFile file) {
         validateFile(file);
@@ -74,7 +75,7 @@ public class FileStorageService {
         try {
             // Security check: ensure filename doesn't contain path separators
             if (storedFilename.contains("..")) {
-                throw new IllegalArgumentException("Invalid file path sequence: " + storedFilename);
+                throw new FileStorageException("Invalid file path sequence: " + storedFilename);
             }
 
             Path targetLocation = uploadPath.resolve(storedFilename);
@@ -85,7 +86,7 @@ public class FileStorageService {
 
         } catch (IOException e) {
             logger.error("Failed to store file: {}", originalFilename, e);
-            throw new RuntimeException("Could not store file " + originalFilename, e);
+            throw new FileStorageException("Could not store file " + originalFilename, e);
         }
     }
 
@@ -94,7 +95,7 @@ public class FileStorageService {
      *
      * @param filename the filename to load
      * @return the file as a Resource
-     * @throws RuntimeException if file not found
+     * @throws FileStorageException if file not found
      */
     public Resource loadFileAsResource(String filename) {
         try {
@@ -104,10 +105,10 @@ public class FileStorageService {
             if (resource.exists() && resource.isReadable()) {
                 return resource;
             } else {
-                throw new RuntimeException("File not found: " + filename);
+                throw new FileStorageException("File not found: " + filename);
             }
         } catch (MalformedURLException e) {
-            throw new RuntimeException("File not found: " + filename, e);
+            throw new FileStorageException("File not found: " + filename, e);
         }
     }
 
@@ -132,26 +133,26 @@ public class FileStorageService {
      */
     private void validateFile(MultipartFile file) {
         if (file.isEmpty()) {
-            throw new IllegalArgumentException("Cannot store empty file");
+            throw new FileStorageException("Cannot store empty file");
         }
 
         if (file.getSize() > MAX_FILE_SIZE) {
-            throw new IllegalArgumentException("File size exceeds maximum limit of 10MB");
+            throw FileStorageException.fileSizeExceeded("File size exceeds maximum limit of 10MB");
         }
 
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
-            throw new IllegalArgumentException("Invalid file type. Allowed types: " + ALLOWED_CONTENT_TYPES);
+            throw new FileStorageException("Invalid file type. Allowed types: " + ALLOWED_CONTENT_TYPES);
         }
 
         String filename = file.getOriginalFilename();
         if (filename == null) {
-            throw new IllegalArgumentException("Filename is required");
+            throw new FileStorageException("Filename is required");
         }
 
         String extension = getFileExtension(filename).toLowerCase();
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
-            throw new IllegalArgumentException("Invalid file extension. Allowed extensions: " + ALLOWED_EXTENSIONS);
+            throw new FileStorageException("Invalid file extension. Allowed extensions: " + ALLOWED_EXTENSIONS);
         }
     }
 

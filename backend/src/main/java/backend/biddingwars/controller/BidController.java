@@ -112,6 +112,7 @@ public class BidController {
         BidDTO highestBid = bidService.getHighestBid(itemId);
         
         if (highestBid == null) {
+            logger.info("No bids found for auction {}", itemId);
             return ResponseEntity.noContent().build();
         }
         

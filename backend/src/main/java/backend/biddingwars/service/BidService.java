@@ -1,15 +1,9 @@
 package backend.biddingwars.service;
 
-import backend.biddingwars.dto.BidDTO;
-import backend.biddingwars.dto.BidRequestDTO;
-import backend.biddingwars.mapper.BidMapper;
-import backend.biddingwars.model.AuctionItem;
-import backend.biddingwars.model.Bid;
-import backend.biddingwars.model.Status;
-import backend.biddingwars.model.User;
-import backend.biddingwars.repository.AuctionItemRepository;
-import backend.biddingwars.repository.BidRepository;
-import jakarta.persistence.EntityNotFoundException;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -17,9 +11,18 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
+import backend.biddingwars.dto.BidDTO;
+import backend.biddingwars.dto.BidRequestDTO;
+import backend.biddingwars.exception.InvalidOperationException;
+import backend.biddingwars.exception.ResourceNotFoundException;
+import backend.biddingwars.exception.ValidationException;
+import backend.biddingwars.mapper.BidMapper;
+import backend.biddingwars.model.AuctionItem;
+import backend.biddingwars.model.Bid;
+import backend.biddingwars.model.Status;
+import backend.biddingwars.model.User;
+import backend.biddingwars.repository.AuctionItemRepository;
+import backend.biddingwars.repository.BidRepository;
 
 /**
  * Service class for bid operations.
@@ -68,26 +71,26 @@ public class BidService {
 
         // Find the auction item
         AuctionItem auctionItem = auctionItemRepository.findById(bidRequest.itemId())
-                .orElseThrow(() -> new EntityNotFoundException("Auction not found with ID: " + bidRequest.itemId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Auction", bidRequest.itemId()));
 
         // === VALIDATION 1: Check if auction is expired ===
         if (auctionItem.getAuctionEndTime().isBefore(LocalDateTime.now())) {
-            throw new IllegalStateException("This auction has ended. Bidding is no longer allowed.");
+            throw new InvalidOperationException("This auction has ended. Bidding is no longer allowed.");
         }
 
         // Check if auction hasn't started yet
         if (auctionItem.getAuctionStartTime().isAfter(LocalDateTime.now())) {
-            throw new IllegalStateException("This auction has not started yet.");
+            throw new InvalidOperationException("This auction has not started yet.");
         }
 
         // Check if auction is active
         if (auctionItem.getStatus() != Status.ACTIVE) {
-            throw new IllegalStateException("This auction is not active. Current status: " + auctionItem.getStatus());
+            throw new InvalidOperationException("This auction is not active. Current status: " + auctionItem.getStatus());
         }
 
         // === VALIDATION 2: Check if bidder is not the owner ===
         if (auctionItem.getOwner().getId().equals(bidder.getId())) {
-            throw new IllegalArgumentException("You cannot bid on your own auction.");
+            throw new ValidationException("You cannot bid on your own auction.");
         }
 
         // === VALIDATION 3: Check if bid is higher than current price ===
@@ -96,7 +99,7 @@ public class BidService {
                 : auctionItem.getStartingPrice();
 
         if (bidRequest.amount().compareTo(currentPrice) <= 0) {
-            throw new IllegalArgumentException(
+            throw new ValidationException(
                     String.format("Bid amount must be higher than current price of %s", currentPrice));
         }
 
@@ -105,7 +108,7 @@ public class BidService {
         BigDecimal requiredMinimum = currentPrice.add(minimumIncrement);
         
         if (bidRequest.amount().compareTo(requiredMinimum) < 0) {
-            throw new IllegalArgumentException(
+            throw new ValidationException(
                     String.format("Minimum bid is %s (current price %s + minimum increment %s)", 
                             requiredMinimum, currentPrice, minimumIncrement));
         }
@@ -211,10 +214,10 @@ public class BidService {
     @Transactional(readOnly = true)
     public BidDTO getWinningBid(Long itemId) {
         AuctionItem auctionItem = auctionItemRepository.findById(itemId)
-                .orElseThrow(() -> new EntityNotFoundException("Auction not found with ID: " + itemId));
+                .orElseThrow(() -> new ResourceNotFoundException("Auction", itemId));
 
         if (auctionItem.getStatus() != Status.SOLD) {
-            throw new IllegalStateException("Auction has not been completed yet");
+            throw new InvalidOperationException("Auction has not been completed yet");
         }
 
         return bidRepository.findHighestBidForItem(itemId)
