@@ -1,6 +1,5 @@
 package backend.biddingwars.config;
 
-import backend.biddingwars.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -14,18 +13,19 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
+
+import backend.biddingwars.security.JwtAuthenticationFilter;
 
 /**
  * Configuration class for Spring Security.
  * Configures HTTP security, authentication, and authorization.
  *
  * @author Oleander Tengesdal
- * @version 1.0
+ * @version 1.1
  * @since 29-01-2026
  */
 @Configuration
