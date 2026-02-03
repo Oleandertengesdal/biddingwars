@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
  * Used for returning user information to clients.
  *
  * @author Oleander Tengesdal
- * @version 1.1
+ * @version 1.2
  * @since 26-01-2026
  */
 public record UserDTO(
@@ -17,5 +17,8 @@ public record UserDTO(
         String firstName,
         String lastName,
         String role,
+        boolean enabled,
+        boolean hasVerifiedPaymentMethod,
+        String defaultPaymentMethod,
         LocalDateTime createdAt
 ) {}

@@ -27,7 +27,7 @@ import jakarta.validation.ConstraintViolationException;
  * Handles both custom AppException hierarchy and Spring-specific exceptions.
  *
  * @author Oleander Tengesdal
- * @version 2.0
+ * @version 2.1
  * @since 03-02-2026
  */
 @RestControllerAdvice
@@ -292,6 +292,36 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * Handle PaymentMethodNotFoundException.
+     */
+    @ExceptionHandler(PaymentMethodNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handlePaymentMethodNotFound(
+            PaymentMethodNotFoundException ex, HttpServletRequest request) {
+        logger.warn("Payment method not found: {}", ex.getMessage());
+        return buildErrorResponse(ex, request);
+    }
+
+    /**
+     * Handle PaymentVerificationException.
+     */
+    @ExceptionHandler(PaymentVerificationException.class)
+    public ResponseEntity<ErrorResponse> handlePaymentVerificationException(
+            PaymentVerificationException ex, HttpServletRequest request) {
+        logger.warn("Payment verification failed: {}", ex.getMessage());
+        return buildErrorResponse(ex, request);
+    }
+
+    /**
+     * Handle UnverifiedPaymentMethodException.
+     */
+    @ExceptionHandler(UnverifiedPaymentMethodException.class)
+    public ResponseEntity<ErrorResponse> handleUnverifiedPaymentMethodException(
+            UnverifiedPaymentMethodException ex, HttpServletRequest request) {
+        logger.warn("Unverified payment method: {}", ex.getMessage());
+        return buildErrorResponse(ex, request);
+    }
+
+    /**
      * Helper method to build error response from AppException.
      */
     private ResponseEntity<ErrorResponse> buildErrorResponse(AppException ex, HttpServletRequest request) {
@@ -306,4 +336,5 @@ public class GlobalExceptionHandler {
         );
         return ResponseEntity.status(ex.getHttpStatus()).body(errorResponse);
     }
+
 }

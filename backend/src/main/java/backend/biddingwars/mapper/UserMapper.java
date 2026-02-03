@@ -19,6 +19,22 @@ public class UserMapper {
         if (user == null) {
             return null;
         }
+        
+        // Check if user has any verified payment method
+        boolean hasVerifiedPayment = user.getPaymentMethods() != null &&
+                user.getPaymentMethods().stream()
+                        .anyMatch(pm -> pm.isVerified() && pm.canBeUsedForPayment());
+        
+        // Get default payment method display name
+        String defaultPayment = null;
+        if (user.getPaymentMethods() != null) {
+            defaultPayment = user.getPaymentMethods().stream()
+                    .filter(pm -> pm.isDefault() && pm.isVerified())
+                    .findFirst()
+                    .map(pm -> pm.getDisplayName())
+                    .orElse(null);
+        }
+        
         return new UserDTO(
                 user.getId(),
                 user.getUsername(),
@@ -26,6 +42,9 @@ public class UserMapper {
                 user.getFirstName(),
                 user.getLastName(),
                 user.getRole() != null ? user.getRole().name() : null,
+                user.isEnabled(),
+                hasVerifiedPayment,
+                defaultPayment,
                 user.getCreatedAt()
         );
     }
