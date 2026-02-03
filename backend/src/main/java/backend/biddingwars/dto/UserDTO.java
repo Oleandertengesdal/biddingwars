@@ -1,8 +1,6 @@
 package backend.biddingwars.dto;
 
-import backend.biddingwars.model.Role;
 import java.time.LocalDateTime;
-
 
 /**
  * Data Transfer Object for User entity.

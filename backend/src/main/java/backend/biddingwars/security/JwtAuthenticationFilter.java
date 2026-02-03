@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -14,6 +15,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import backend.biddingwars.service.UserService;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,7 +32,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
+    private static final Logger jwtLogger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
 
@@ -71,13 +73,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             );
 
                             SecurityContextHolder.getContext().setAuthentication(authentication);
-                            logger.debug("User '{}' authenticated successfully", username);
+                            jwtLogger.debug("User '{}' authenticated successfully", username);
                         }
                     }
                 }
             }
-        } catch (Exception e) {
-            logger.error("Cannot set user authentication: {}", e.getMessage());
+        } catch (JwtException | UsernameNotFoundException e) {
+            jwtLogger.error("Cannot set user authentication: {}", e.getMessage());
         }
 
         filterChain.doFilter(request, response);
