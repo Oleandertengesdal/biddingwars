@@ -48,7 +48,6 @@ public class AuctionItemService {
         this.auctionItemMapper = auctionItemMapper;
     }
 
-    // ==================== CREATE OPERATIONS ====================
 
     /**
      * Creates a new auction item.
