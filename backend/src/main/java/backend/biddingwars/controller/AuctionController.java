@@ -1,14 +1,7 @@
 package backend.biddingwars.controller;
 
-import backend.biddingwars.dto.AuctionItemDTO;
-import backend.biddingwars.dto.AuctionItemDetailDTO;
-import backend.biddingwars.dto.AuctionItemRequestDTO;
-import backend.biddingwars.model.User;
-import backend.biddingwars.service.AuctionItemService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -19,16 +12,33 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import backend.biddingwars.dto.AuctionItemDTO;
+import backend.biddingwars.dto.AuctionItemDetailDTO;
+import backend.biddingwars.dto.AuctionItemRequestDTO;
+import backend.biddingwars.model.User;
+import backend.biddingwars.service.AuctionItemService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 /**
  * REST Controller for auction item endpoints.
  * Handles CRUD operations for auction items.
+ * Provides public and authenticated endpoints.
  *
  * @author Oleander Tengesdal
- * @version 1.0
+ * @version 1.1
  * @since 02-02-2026
  */
 @RestController
@@ -63,6 +73,8 @@ public class AuctionController {
         
         Pageable pageable = PageRequest.of(page, size, Sort.by(sort));
         Page<AuctionItemDTO> auctions = auctionItemService.getActiveAuctions(pageable);
+
+        logger.info("Fetched page {} of active auctions, size {}, sorted by {}.", page, size, sort);
         
         return ResponseEntity.ok(auctions);
     }
@@ -79,6 +91,9 @@ public class AuctionController {
             @Parameter(description = "Auction ID") @PathVariable Long id) {
         
         AuctionItemDetailDTO auction = auctionItemService.getAuctionById(id);
+
+        logger.info("Fetched auction with id {}.", id);
+
         return ResponseEntity.ok(auction);
     }
 
@@ -99,6 +114,8 @@ public class AuctionController {
         
         Pageable pageable = PageRequest.of(page, size);
         Page<AuctionItemDTO> results = auctionItemService.searchAuctions(q, pageable);
+
+        logger.info("Search query: '{}', Results found: {}", q, results.getTotalElements());
         
         return ResponseEntity.ok(results);
     }
@@ -114,6 +131,8 @@ public class AuctionController {
     public ResponseEntity<List<AuctionItemDTO>> getAuctionsByCategory(
             @Parameter(description = "Category ID") @PathVariable Long categoryId) {
         
+        logger.info("Fetching auctions for category ID: {}", categoryId);
+
         List<AuctionItemDTO> auctions = auctionItemService.getAuctionsByCategory(categoryId);
         return ResponseEntity.ok(auctions);
     }
@@ -157,6 +176,9 @@ public class AuctionController {
             @AuthenticationPrincipal User currentUser) {
         
         AuctionItemDetailDTO updatedAuction = auctionItemService.updateAuction(id, requestDTO, currentUser);
+
+        logger.info("Updated auction with id {} and user {}.", id, currentUser.getUsername());
+
         return ResponseEntity.ok(updatedAuction);
     }
 
@@ -178,6 +200,9 @@ public class AuctionController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         
         auctionItemService.deleteAuction(id, currentUser, isAdmin);
+
+        logger.info("Deleted auction with id {} by user {}.", id, currentUser.getUsername());
+
         return ResponseEntity.noContent().build();
     }
 
@@ -194,6 +219,9 @@ public class AuctionController {
             @AuthenticationPrincipal User currentUser) {
         
         List<AuctionItemDTO> auctions = auctionItemService.getAuctionsByOwner(currentUser.getId());
+
+        logger.info("Fetched {} auctions for user {}.", auctions.size(), currentUser.getUsername());
+
         return ResponseEntity.ok(auctions);
     }
 }

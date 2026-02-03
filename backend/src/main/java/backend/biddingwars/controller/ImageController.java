@@ -1,12 +1,8 @@
 package backend.biddingwars.controller;
 
-import backend.biddingwars.dto.AuctionItemDetailDTO;
-import backend.biddingwars.model.User;
-import backend.biddingwars.service.AuctionItemService;
-import backend.biddingwars.service.FileStorageService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
@@ -15,11 +11,22 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.List;
+import backend.biddingwars.dto.AuctionItemDetailDTO;
+import backend.biddingwars.exception.IllegalImageUploadException;
+import backend.biddingwars.model.User;
+import backend.biddingwars.service.AuctionItemService;
+import backend.biddingwars.service.FileStorageService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 
 /**
  * REST Controller for image upload and retrieval.
@@ -66,7 +73,8 @@ public class ImageController {
                 currentUser.getUsername(), files.length, id);
 
         if (files.length > 5) {
-            throw new IllegalArgumentException("Maximum 5 images allowed per upload");
+            logger.warn("Maximum 5 images allowed per upload, received {} images from user {}", files.length, currentUser.getUsername());
+            throw new IllegalImageUploadException("Maximum 5 images allowed per upload.");
         }
 
         List<String> imageUrls = new ArrayList<>();
@@ -98,6 +106,8 @@ public class ImageController {
 
         Resource resource = fileStorageService.loadFileAsResource(filename);
         String contentType = fileStorageService.getContentType(filename);
+
+        logger.info("Serving image {} for auction {}", filename, id);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))

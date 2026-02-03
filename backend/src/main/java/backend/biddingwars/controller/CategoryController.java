@@ -1,5 +1,15 @@
 package backend.biddingwars.controller;
 
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import backend.biddingwars.dto.CategoryDTO;
 import backend.biddingwars.mapper.CategoryMapper;
 import backend.biddingwars.model.Category;
@@ -7,10 +17,6 @@ import backend.biddingwars.repository.CategoryRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * REST Controller for category endpoints.
@@ -24,6 +30,8 @@ import java.util.List;
 @RequestMapping("/categories")
 @Tag(name = "Categories", description = "Category management endpoints")
 public class CategoryController {
+
+    private static final Logger logger = LoggerFactory.getLogger(CategoryController.class);
 
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
@@ -45,6 +53,9 @@ public class CategoryController {
         List<CategoryDTO> categoryDTOs = categories.stream()
                 .map(categoryMapper::toDto)
                 .toList();
+
+        logger.info("Fetched all categories, total count: {}.", categoryDTOs.size());
+        
         return ResponseEntity.ok(categoryDTOs);
     }
 
@@ -59,6 +70,8 @@ public class CategoryController {
     public ResponseEntity<CategoryDTO> getCategoryById(@PathVariable Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Category not found with ID: " + id));
+        
+        logger.info("Fetched category with id {}.", id);
         return ResponseEntity.ok(categoryMapper.toDto(category));
     }
 }
