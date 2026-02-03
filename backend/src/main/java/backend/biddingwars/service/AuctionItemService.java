@@ -79,7 +79,7 @@ public class AuctionItemService {
         }
 
         // Fetch and set categories
-        if (requestDTO.categoryIds() != null && !requestDTO.categoryIds().isEmpty()) {
+        if (!requestDTO.categoryIds().isEmpty()) {
             List<Category> categories = categoryRepository.findAllById(requestDTO.categoryIds());
             if (categories.size() != requestDTO.categoryIds().size()) {
                 throw new ValidationException("One or more category IDs are invalid");
@@ -208,7 +208,7 @@ public class AuctionItemService {
         auctionItemMapper.updateEntityFromDTO(auctionItem, requestDTO);
 
         // Update categories if provided
-        if (requestDTO.categoryIds() != null) {
+        if (!requestDTO.categoryIds().isEmpty()) {
             List<Category> categories = categoryRepository.findAllById(requestDTO.categoryIds());
             auctionItem.setCategories(categories);
         }

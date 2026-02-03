@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import backend.biddingwars.dto.AuctionItemDetailDTO;
-import backend.biddingwars.exception.IllegalImageUploadException;
+import backend.biddingwars.exception.FileStorageException;
 import backend.biddingwars.model.User;
 import backend.biddingwars.service.AuctionItemService;
 import backend.biddingwars.service.FileStorageService;
@@ -33,7 +33,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
  * Handles file upload for auction item images.
  *
  * @author Oleander Tengesdal
- * @version 1.0
+ * @version 1.1
  * @since 02-02-2026
  */
 @RestController
@@ -74,7 +74,7 @@ public class ImageController {
 
         if (files.length > 5) {
             logger.warn("Maximum 5 images allowed per upload, received {} images from user {}", files.length, currentUser.getUsername());
-            throw new IllegalImageUploadException("Maximum 5 images allowed per upload.");
+            throw new FileStorageException("Maximum 5 images allowed per upload.");
         }
 
         List<String> imageUrls = new ArrayList<>();
