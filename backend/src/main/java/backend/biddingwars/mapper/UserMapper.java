@@ -9,7 +9,7 @@ import backend.biddingwars.model.User;
  * Mapper class for converting between User entities and UserDTOs.
  *
  * @author oleander tengesdal
- * @version 1.1
+ * @version 1.2
  * @since 02-02-2026
  */
 @Component

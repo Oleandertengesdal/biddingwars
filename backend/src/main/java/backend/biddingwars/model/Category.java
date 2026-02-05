@@ -22,7 +22,7 @@ public class Category {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private PaymentMethodType type;
+    private String name;
 
 
 }

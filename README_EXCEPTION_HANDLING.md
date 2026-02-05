@@ -15,7 +15,7 @@ A comprehensive, production-grade exception handling system has been implemented
 All errors return:
 ```json
 {
-  "timestamp": "2026-02-03T10:30:45.123456",
+  "timestamp": "2026-02-03T10:30:45.123456",c
   "status": 404,
   "error": "Not Found",
   "errorCode": "RESOURCE_NOT_FOUND",

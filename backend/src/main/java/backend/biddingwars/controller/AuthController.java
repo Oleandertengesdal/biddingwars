@@ -69,6 +69,7 @@ public class AuthController {
         LocalDateTime expiresAt = LocalDateTime.now().plus(jwtUtil.getTokenValidityMs(), ChronoUnit.MILLIS);
 
         AuthResponseDTO response = new AuthResponseDTO(token, "Bearer", expiresAt, userDTO);
+        
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -117,6 +118,8 @@ public class AuthController {
     public ResponseEntity<UserDTO> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
+
+        logger.info("Fetching current user info for {}", user.getUsername());
         
         return ResponseEntity.ok(userMapper.toDTO(user));
     }

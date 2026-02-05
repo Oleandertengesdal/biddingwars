@@ -4,8 +4,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import backend.biddingwars.model.Status;
-
 /**
  * Auction Item Detail Data Transfer Object.
  * Contains full auction details for single item view.
