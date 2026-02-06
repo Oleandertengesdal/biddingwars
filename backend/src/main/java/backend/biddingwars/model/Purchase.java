@@ -57,4 +57,10 @@ public class Purchase {
 
     @Column()
     private LocalDateTime completedDate;
+
+    @Column(nullable = false)
+    private LocalDateTime paymentDeadline;
+
+    @Column
+    private boolean paymentDefaulted = false;  // Marked when deadline passed
 }

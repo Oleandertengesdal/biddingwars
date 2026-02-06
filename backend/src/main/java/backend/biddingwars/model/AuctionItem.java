@@ -36,8 +36,9 @@ import lombok.EqualsAndHashCode;
  * Extends BaseEntity to inherit audit fields (createdAt, updatedAt) and optimistic locking (version).
  *
  * @author Oleander Tengesdal
- * @version 1.1
+ * @version 2.0
  * @since 02-02-2026
+ * @see BaseEntity
  */
 @Entity
 @Table(name = "items")
@@ -98,6 +99,18 @@ public class AuctionItem extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Status status = Status.PENDING;
+
+    @Column
+    private Integer antiSnipeMinutes;  // Minutes to add (null = disabled)
+
+    @Column
+    private Integer antiSnipeThresholdSeconds = 300;  // Trigger when < X seconds remain
+
+    @Column
+    private LocalDateTime originalEndTime;  // Store the original end time
+
+    @Column(nullable = false)
+    private int extensionCount = 0;  // Track how many times extended
 
     private Double latitude;
     private Double longitude;

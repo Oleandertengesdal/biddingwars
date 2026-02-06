@@ -1,5 +1,6 @@
 package backend.biddingwars.model;
 
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
@@ -33,7 +34,7 @@ import lombok.EqualsAndHashCode;
  * Uses JPA annotations for ORM mapping and validation annotations for field constraints.
  *
  * @author Oleander Tengesdal
- * @version 1.0
+ * @version 2.0
  * @since 26-01-2026
  */
 @Entity
@@ -81,6 +82,18 @@ public class User extends BaseEntity implements UserDetails {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PaymentMethod> paymentMethods;
+
+    @Column(nullable = false)
+    private int nonPaymentCount = 0;  // Track missed payments
+
+    @Column
+    private LocalDateTime bannedUntil;  // Null = not banned
+
+    @Column
+    private String banReason;
+
+    @Column(nullable = false)
+    private boolean permanentBan = false;
     
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
