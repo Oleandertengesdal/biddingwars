@@ -26,8 +26,11 @@ import backend.biddingwars.model.User;
 import backend.biddingwars.service.BidService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.validation.annotation.Validated;
 
 /**
  * REST Controller for bid endpoints.
@@ -40,6 +43,7 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/bids")
 @Tag(name = "Bids", description = "Bid management endpoints")
+@Validated
 public class BidController {
 
     private static final Logger logger = LoggerFactory.getLogger(BidController.class);
@@ -64,6 +68,14 @@ public class BidController {
     @PostMapping
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Place a bid", description = "Places a new bid on an auction item")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Bid placed successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid bid amount or auction ended"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Cannot bid on own auction"),
+            @ApiResponse(responseCode = "404", description = "Auction not found"),
+            @ApiResponse(responseCode = "409", description = "Concurrent bid conflict")
+    })
     public ResponseEntity<BidDTO> placeBid(
             @Valid @RequestBody BidRequestDTO bidRequest,
             @AuthenticationPrincipal User currentUser) {
@@ -85,6 +97,10 @@ public class BidController {
      */
     @GetMapping("/auction/{itemId}")
     @Operation(summary = "Get bids for auction", description = "Returns all bids for a specific auction")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Bids retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Auction not found")
+    })
     public ResponseEntity<Page<BidDTO>> getBidsForAuction(
             @Parameter(description = "Auction item ID") @PathVariable Long itemId,
             @RequestParam(defaultValue = "0") int page,
@@ -106,6 +122,11 @@ public class BidController {
      */
     @GetMapping("/auction/{itemId}/highest")
     @Operation(summary = "Get highest bid", description = "Returns the highest bid for an auction")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Highest bid found"),
+            @ApiResponse(responseCode = "204", description = "No bids found"),
+            @ApiResponse(responseCode = "404", description = "Auction not found")
+    })
     public ResponseEntity<BidDTO> getHighestBid(
             @Parameter(description = "Auction item ID") @PathVariable Long itemId) {
         
@@ -130,6 +151,10 @@ public class BidController {
     @GetMapping("/my-bids")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get my bids", description = "Returns all bids placed by the current user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Bids retrieved successfully"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
     public ResponseEntity<List<BidDTO>> getMyBids(
             @AuthenticationPrincipal User currentUser) {
         
@@ -146,6 +171,10 @@ public class BidController {
      */
     @GetMapping("/auction/{itemId}/count")
     @Operation(summary = "Get bid count", description = "Returns the number of bids for an auction")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Bid count retrieved"),
+            @ApiResponse(responseCode = "404", description = "Auction not found")
+    })
     public ResponseEntity<Long> getBidCount(
             @Parameter(description = "Auction item ID") @PathVariable Long itemId) {
         

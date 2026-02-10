@@ -6,9 +6,12 @@ import backend.biddingwars.model.User;
 import backend.biddingwars.security.JwtUtil;
 import backend.biddingwars.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
+import org.springframework.validation.annotation.Validated;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +35,7 @@ import java.time.temporal.ChronoUnit;
 @RestController
 @RequestMapping("/auth")
 @Tag(name = "Authentication", description = "User authentication endpoints")
+@Validated
 public class AuthController {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
@@ -59,13 +63,18 @@ public class AuthController {
      */
     @PostMapping("/register")
     @Operation(summary = "Register a new user", description = "Creates a new user account")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "User registered successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "409", description = "Username or email already exists")
+    })
     public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO registerRequest) {
         logger.info("Registration request for username: {}", registerRequest.username());
 
         UserDTO userDTO = userService.registerUser(registerRequest);
 
         // Generate token for the new user
-        String token = jwtUtil.generateToken(userDTO.id(), userDTO.username());
+        String token = jwtUtil.generateToken(userDTO.id(), userDTO.username(), userDTO.role());
         LocalDateTime expiresAt = LocalDateTime.now().plus(jwtUtil.getTokenValidityMs(), ChronoUnit.MILLIS);
 
         AuthResponseDTO response = new AuthResponseDTO(token, "Bearer", expiresAt, userDTO);
@@ -81,6 +90,11 @@ public class AuthController {
      */
     @PostMapping("/login")
     @Operation(summary = "User login", description = "Authenticates user and returns JWT token")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Login successful"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials")
+    })
     public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO loginRequest) {
         logger.info("Login attempt for username: {}", loginRequest.username());
 
@@ -99,7 +113,7 @@ public class AuthController {
         UserDTO userDTO = userMapper.toDTO(user);
 
         // Generate JWT token
-        String token = jwtUtil.generateToken(user.getId(), user.getUsername());
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole().name());
         LocalDateTime expiresAt = LocalDateTime.now().plus(jwtUtil.getTokenValidityMs(), ChronoUnit.MILLIS);
 
         logger.info("User {} logged in successfully", user.getUsername());
@@ -115,6 +129,10 @@ public class AuthController {
      */
     @GetMapping("/me")
     @Operation(summary = "Get current user", description = "Returns the currently authenticated user's information")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User info returned successfully"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
     public ResponseEntity<UserDTO> getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User user = (User) authentication.getPrincipal();
