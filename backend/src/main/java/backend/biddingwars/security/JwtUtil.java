@@ -43,19 +43,29 @@ public class JwtUtil {
         return tokenValidityMs;
     }
 
-    public String generateToken(Long userId, String username) {
+    /**
+     * Generate JWT token with user details and role.
+     *
+     * @param userId the user's ID
+     * @param username the user's username
+     * @param role the user's role (USER or ADMIN)
+     * @return the generated JWT token
+     */
+    public String generateToken(Long userId, String username, String role) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + tokenValidityMs);
 
         String token = Jwts.builder()
                 .setSubject(username)
                 .claim("userId", userId)
+                .claim("role", role)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey())
                 .compact();
 
-        logger.info("Generated JWT token for user: {} (expires in {} minutes)", username, tokenValidityMs / 60000);
+        logger.info("Generated JWT token for user: {} with role: {} (expires in {} minutes)", 
+                username, role, tokenValidityMs / 60000);
         return token;
     }
 
@@ -82,5 +92,16 @@ public class JwtUtil {
     public Long extractUserId(String token) {
         Claims claims = validateToken(token);
         return claims != null ? claims.get("userId", Long.class) : null;
+    }
+
+    /**
+     * Extract user role from JWT token.
+     *
+     * @param token the JWT token
+     * @return the user's role or null if invalid
+     */
+    public String extractRole(String token) {
+        Claims claims = validateToken(token);
+        return claims != null ? claims.get("role", String.class) : null;
     }
 }

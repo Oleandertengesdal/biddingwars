@@ -26,7 +26,10 @@ import backend.biddingwars.service.AuctionItemService;
 import backend.biddingwars.service.FileStorageService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.validation.annotation.Validated;
 
 /**
  * REST Controller for image upload and retrieval.
@@ -39,6 +42,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/items")
 @Tag(name = "Images", description = "Image upload and retrieval endpoints")
+@Validated
 public class ImageController {
 
     private static final Logger logger = LoggerFactory.getLogger(ImageController.class);
@@ -64,6 +68,13 @@ public class ImageController {
     @PostMapping("/{id}/image")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Upload images", description = "Uploads images for an auction item")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Images uploaded successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid file or too many images"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Not authorized to upload to this auction"),
+            @ApiResponse(responseCode = "404", description = "Auction not found")
+    })
     public ResponseEntity<AuctionItemDetailDTO> uploadImages(
             @Parameter(description = "Auction item ID") @PathVariable Long id,
             @RequestParam("files") MultipartFile[] files,
@@ -100,6 +111,10 @@ public class ImageController {
      */
     @GetMapping("/{id}/image/{filename}")
     @Operation(summary = "Get image", description = "Retrieves an image file")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Image retrieved"),
+            @ApiResponse(responseCode = "404", description = "Image not found")
+    })
     public ResponseEntity<Resource> getImage(
             @Parameter(description = "Auction item ID") @PathVariable Long id,
             @Parameter(description = "Image filename") @PathVariable String filename) {

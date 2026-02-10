@@ -16,7 +16,10 @@ import backend.biddingwars.mapper.CategoryMapper;
 import backend.biddingwars.model.Category;
 import backend.biddingwars.repository.CategoryRepository;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.validation.annotation.Validated;
 
 /**
  * REST Controller for category endpoints.
@@ -29,6 +32,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController
 @RequestMapping("/categories")
 @Tag(name = "Categories", description = "Category management endpoints")
+@Validated
 public class CategoryController {
 
     private static final Logger logger = LoggerFactory.getLogger(CategoryController.class);
@@ -48,6 +52,9 @@ public class CategoryController {
      */
     @GetMapping
     @Operation(summary = "Get all categories", description = "Returns all auction categories")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Categories retrieved successfully")
+    })
     public ResponseEntity<List<CategoryDTO>> getAllCategories() {
         List<Category> categories = categoryRepository.findAll();
         List<CategoryDTO> categoryDTOs = categories.stream()
@@ -67,6 +74,10 @@ public class CategoryController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "Get category by ID", description = "Returns a specific category")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Category found"),
+            @ApiResponse(responseCode = "404", description = "Category not found")
+    })
     public ResponseEntity<CategoryDTO> getCategoryById(@PathVariable Long id) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Category not found with ID: " + id));

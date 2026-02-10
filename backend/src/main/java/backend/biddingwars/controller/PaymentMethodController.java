@@ -24,8 +24,11 @@ import backend.biddingwars.model.User;
 import backend.biddingwars.service.PaymentMethodService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.validation.annotation.Validated;
 
 /**
  * REST Controller for payment method endpoints.
@@ -39,6 +42,7 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/payment-methods")
 @Tag(name = "Payment Methods", description = "Payment method management endpoints")
+@Validated
 public class PaymentMethodController {
 
     private static final Logger logger = LoggerFactory.getLogger(PaymentMethodController.class);
@@ -57,6 +61,11 @@ public class PaymentMethodController {
     @PostMapping
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Add payment method", description = "Add a new payment method (card or Vipps)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Payment method added"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
     public ResponseEntity<PaymentMethodDTO> addPaymentMethod(
             @AuthenticationPrincipal User user,
             @Valid @RequestBody PaymentMethodRequestDTO request) {
@@ -75,6 +84,12 @@ public class PaymentMethodController {
     @PostMapping("/{id}/verify")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Verify payment method", description = "Verify a payment method using the verification code")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Payment method verified"),
+            @ApiResponse(responseCode = "400", description = "Invalid verification code"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated"),
+            @ApiResponse(responseCode = "404", description = "Payment method not found")
+    })
     public ResponseEntity<PaymentMethodDTO> verifyPaymentMethod(
             @AuthenticationPrincipal User user,
             @Parameter(description = "Payment method ID") @PathVariable Long id,
@@ -94,6 +109,12 @@ public class PaymentMethodController {
     @PutMapping("/{id}/default")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Set default payment method", description = "Set a verified payment method as the default")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Default payment method set"),
+            @ApiResponse(responseCode = "400", description = "Payment method not verified"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated"),
+            @ApiResponse(responseCode = "404", description = "Payment method not found")
+    })
     public ResponseEntity<PaymentMethodDTO> setDefaultPaymentMethod(
             @AuthenticationPrincipal User user,
             @Parameter(description = "Payment method ID") @PathVariable Long id) {
@@ -111,6 +132,10 @@ public class PaymentMethodController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get user payment methods", description = "Get all payment methods for the authenticated user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Payment methods retrieved"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
     public ResponseEntity<List<PaymentMethodDTO>> getUserPaymentMethods(
             @AuthenticationPrincipal User user) {
         
@@ -128,6 +153,12 @@ public class PaymentMethodController {
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Delete payment method", description = "Delete a payment method")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Payment method deleted"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Not authorized"),
+            @ApiResponse(responseCode = "404", description = "Payment method not found")
+    })
     public ResponseEntity<Void> deletePaymentMethod(
             @AuthenticationPrincipal User user,
             @Parameter(description = "Payment method ID") @PathVariable Long id) {

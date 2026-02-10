@@ -13,9 +13,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import backend.biddingwars.dto.BidDTO;
 import backend.biddingwars.dto.BidRequestDTO;
+import backend.biddingwars.exception.ConcurrentBidException;
 import backend.biddingwars.exception.InvalidOperationException;
 import backend.biddingwars.exception.ResourceNotFoundException;
 import backend.biddingwars.exception.ValidationException;
+import jakarta.persistence.OptimisticLockException;
 import backend.biddingwars.mapper.BidMapper;
 import backend.biddingwars.model.AuctionItem;
 import backend.biddingwars.model.Bid;
@@ -121,9 +123,17 @@ public class BidService {
 
         Bid savedBid = bidRepository.save(bid);
 
-        // Update the auction's current price
-        auctionItem.setCurrentPrice(bidRequest.amount());
-        auctionItemRepository.save(auctionItem);
+        // Update the auction's current price with optimistic locking protection
+        try {
+            auctionItem.setCurrentPrice(bidRequest.amount());
+            auctionItemRepository.save(auctionItem);
+        } catch (OptimisticLockException e) {
+            // Concurrent modification detected - another bid was placed simultaneously
+            logger.warn("Concurrent bid detected on auction {} by user {}", 
+                    auctionItem.getId(), bidder.getUsername());
+            throw new ConcurrentBidException(
+                    "Another bid was placed at the same time. Please refresh and try again.");
+        }
 
         logger.info("Bid placed successfully: {} on auction {} by user {}", 
                 savedBid.getId(), auctionItem.getId(), bidder.getUsername());

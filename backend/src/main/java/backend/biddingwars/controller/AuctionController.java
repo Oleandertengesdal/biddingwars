@@ -29,8 +29,11 @@ import backend.biddingwars.model.User;
 import backend.biddingwars.service.AuctionItemService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.validation.annotation.Validated;
 
 /**
  * REST Controller for auction item endpoints.
@@ -38,11 +41,12 @@ import jakarta.validation.Valid;
  * Provides public and authenticated endpoints.
  *
  * @author Oleander Tengesdal
- * @version 1.1
+ * @version 1.2
  * @since 02-02-2026
  */
 @RestController
 @RequestMapping("/auctions")
+@Validated
 @Tag(name = "Auctions", description = "Auction item management endpoints")
 public class AuctionController {
 
@@ -66,6 +70,9 @@ public class AuctionController {
      */
     @GetMapping
     @Operation(summary = "Get active auctions", description = "Returns paginated list of active auctions")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Auctions retrieved successfully")
+    })
     public ResponseEntity<Page<AuctionItemDTO>> getActiveAuctions(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
@@ -87,6 +94,10 @@ public class AuctionController {
      */
     @GetMapping("/{id}")
     @Operation(summary = "Get auction by ID", description = "Returns detailed auction information")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Auction found"),
+            @ApiResponse(responseCode = "404", description = "Auction not found")
+    })
     public ResponseEntity<AuctionItemDetailDTO> getAuctionById(
             @Parameter(description = "Auction ID") @PathVariable Long id) {
         
@@ -107,6 +118,9 @@ public class AuctionController {
      */
     @GetMapping("/search")
     @Operation(summary = "Search auctions", description = "Search auctions by title or description")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Search results returned")
+    })
     public ResponseEntity<Page<AuctionItemDTO>> searchAuctions(
             @RequestParam String q,
             @RequestParam(defaultValue = "0") int page,
@@ -128,6 +142,10 @@ public class AuctionController {
      */
     @GetMapping("/category/{categoryId}")
     @Operation(summary = "Get auctions by category", description = "Returns auctions in a specific category")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Auctions retrieved"),
+            @ApiResponse(responseCode = "404", description = "Category not found")
+    })
     public ResponseEntity<List<AuctionItemDTO>> getAuctionsByCategory(
             @Parameter(description = "Category ID") @PathVariable Long categoryId) {
         
@@ -149,6 +167,11 @@ public class AuctionController {
     @PostMapping
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Create auction", description = "Creates a new auction item")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Auction created successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
     public ResponseEntity<AuctionItemDetailDTO> createAuction(
             @Valid @RequestBody AuctionItemRequestDTO requestDTO,
             @AuthenticationPrincipal User currentUser) {
@@ -170,6 +193,13 @@ public class AuctionController {
     @PutMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Update auction", description = "Updates an existing auction (owner only)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Auction updated successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Not authorized to update this auction"),
+            @ApiResponse(responseCode = "404", description = "Auction not found")
+    })
     public ResponseEntity<AuctionItemDetailDTO> updateAuction(
             @PathVariable Long id,
             @Valid @RequestBody AuctionItemRequestDTO requestDTO,
@@ -192,6 +222,12 @@ public class AuctionController {
     @DeleteMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Delete auction", description = "Deletes an auction (owner or admin only)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Auction deleted successfully"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated"),
+            @ApiResponse(responseCode = "403", description = "Not authorized to delete this auction"),
+            @ApiResponse(responseCode = "404", description = "Auction not found")
+    })
     public ResponseEntity<Void> deleteAuction(
             @PathVariable Long id,
             @AuthenticationPrincipal User currentUser) {
@@ -215,6 +251,10 @@ public class AuctionController {
     @GetMapping("/my-auctions")
     @PreAuthorize("isAuthenticated()")
     @Operation(summary = "Get my auctions", description = "Returns current user's auctions")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Auctions retrieved"),
+            @ApiResponse(responseCode = "401", description = "Not authenticated")
+    })
     public ResponseEntity<List<AuctionItemDTO>> getMyAuctions(
             @AuthenticationPrincipal User currentUser) {
         

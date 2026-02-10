@@ -34,8 +34,8 @@ server:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:your-256-bit-secret-key-here-change-in-production-minimum-32-chars}
-  tokenValidityMs: 86400000 # 24 hours
+  secret: ${JWT_SECRET}  # Required - set via environment variable
+  tokenValidityMs: ${JWT_TOKEN_VALIDITY_MS:86400000} # 24 hours default
 
 # Logging Configuration
 logging:
