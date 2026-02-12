@@ -220,4 +220,102 @@ public class UserService implements UserDetailsService {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
     }
+
+    /**
+     * Ban a user for a specified duration.
+     *
+     * @param id the user ID to ban
+     * @param reason the reason for the ban
+     * @param durationDays the ban duration in days (null for permanent)
+     * @param permanent whether this is a permanent ban
+     * @return the updated user as DTO
+     */
+    public UserDTO banUser(Long id, String reason, Integer durationDays, boolean permanent) {
+        User user = findUserOrThrow(id);
+
+        if (permanent) {
+            user.setPermanentBan(true);
+            user.setBannedUntil(null);
+            logger.warn("User {} permanently banned: {}", user.getUsername(), reason);
+        } else if (durationDays != null && durationDays > 0) {
+            user.setBannedUntil(java.time.LocalDateTime.now().plusDays(durationDays));
+            user.setPermanentBan(false);
+            logger.warn("User {} banned for {} days: {}", user.getUsername(), durationDays, reason);
+        } else {
+            throw new ValidationException("Ban must specify either duration or be permanent");
+        }
+
+        user.setBanReason(reason);
+        User savedUser = userRepository.save(user);
+        return userMapper.toDTO(savedUser);
+    }
+
+    /**
+     * Unban a user.
+     *
+     * @param id the user ID to unban
+     * @return the updated user as DTO
+     */
+    public UserDTO unbanUser(Long id) {
+        User user = findUserOrThrow(id);
+        
+        user.setBannedUntil(null);
+        user.setPermanentBan(false);
+        user.setBanReason(null);
+        
+        User savedUser = userRepository.save(user);
+        logger.info("User {} unbanned by admin", user.getUsername());
+        return userMapper.toDTO(savedUser);
+    }
+
+    /**
+     * Check if a user is currently banned.
+     *
+     * @param user the user to check
+     * @return true if user is banned
+     */
+    public boolean isUserBanned(User user) {
+        if (user.isPermanentBan()) {
+            return true;
+        }
+        if (user.getBannedUntil() != null) {
+            return user.getBannedUntil().isAfter(java.time.LocalDateTime.now());
+        }
+        return false;
+    }
+
+    /**
+     * Get all banned users.
+     *
+     * @return list of banned users
+     */
+    @Transactional(readOnly = true)
+    public List<UserDTO> getBannedUsers() {
+        return userRepository.findAll().stream()
+                .filter(this::isUserBanned)
+                .map(userMapper::toDTO)
+                .toList();
+    }
+
+    /**
+     * Clear expired bans - called by scheduler.
+     */
+    public void clearExpiredBans() {
+        List<User> usersWithExpiredBans = userRepository.findAll().stream()
+                .filter(u -> u.getBannedUntil() != null && 
+                             !u.isPermanentBan() &&
+                             u.getBannedUntil().isBefore(java.time.LocalDateTime.now()))
+                .toList();
+
+        for (User user : usersWithExpiredBans) {
+            user.setBannedUntil(null);
+            user.setBanReason(null);
+            userRepository.save(user);
+            logger.info("Ban expired for user: {}", user.getUsername());
+        }
+
+        if (!usersWithExpiredBans.isEmpty()) {
+            logger.info("Cleared {} expired bans", usersWithExpiredBans.size());
+        }
+    }
 }
