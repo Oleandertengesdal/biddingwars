@@ -1,5 +1,9 @@
 package backend.biddingwars.mapper;
 
+import java.util.List;
+
+import org.springframework.stereotype.Component;
+
 import backend.biddingwars.dto.AuctionItemDTO;
 import backend.biddingwars.dto.AuctionItemDetailDTO;
 import backend.biddingwars.dto.AuctionItemRequestDTO;
@@ -7,9 +11,6 @@ import backend.biddingwars.model.AuctionItem;
 import backend.biddingwars.model.Category;
 import backend.biddingwars.model.Status;
 import backend.biddingwars.model.User;
-import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 /**
  * Mapper class for converting between AuctionItem entities and DTOs.
@@ -111,7 +112,11 @@ public class AuctionItemMapper {
                 auctionItem.getLatitude(),
                 auctionItem.getLongitude(),
                 auctionItem.getStatus() == Status.ACTIVE && 
-                        auctionItem.getAuctionEndTime().isAfter(java.time.LocalDateTime.now())
+                        auctionItem.getAuctionEndTime().isAfter(java.time.LocalDateTime.now()),
+                auctionItem.getAntiSnipeMinutes(),
+                auctionItem.getAntiSnipeThresholdSeconds(),
+                auctionItem.getExtensionCount(),
+                auctionItem.getOriginalEndTime()
         );
     }
 
@@ -134,8 +139,13 @@ public class AuctionItemMapper {
         auctionItem.setCurrentPrice(requestDTO.startingPrice()); // Initial current price = starting price
         auctionItem.setAuctionStartTime(requestDTO.startTime());
         auctionItem.setAuctionEndTime(requestDTO.endTime());
+        auctionItem.setOriginalEndTime(requestDTO.endTime()); // Store original end time for anti-snipe
         auctionItem.setLatitude(requestDTO.latitude());
         auctionItem.setLongitude(requestDTO.longitude());
+        auctionItem.setAntiSnipeMinutes(requestDTO.antiSnipeMinutes());
+        Integer threshold = requestDTO.antiSnipeThresholdSeconds();
+        auctionItem.setAntiSnipeThresholdSeconds(threshold != null ? threshold : 300); // Default 5 minutes
+        auctionItem.setExtensionCount(0);
         auctionItem.setStatus(Status.PENDING); // Default status for new auctions
         
         // Note: Categories should be fetched and set in the service layer
@@ -163,6 +173,10 @@ public class AuctionItemMapper {
         existingItem.setAuctionEndTime(requestDTO.endTime());
         existingItem.setLatitude(requestDTO.latitude());
         existingItem.setLongitude(requestDTO.longitude());
+        existingItem.setAntiSnipeMinutes(requestDTO.antiSnipeMinutes());
+        if (requestDTO.antiSnipeThresholdSeconds() != null) {
+            existingItem.setAntiSnipeThresholdSeconds(requestDTO.antiSnipeThresholdSeconds());
+        }
         
         // Note: Categories should be handled separately in the service layer
     }
