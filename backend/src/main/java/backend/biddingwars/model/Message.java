@@ -48,6 +48,9 @@ public class Message extends BaseEntity {
     @JoinColumn(name = "item_id", nullable = false)
     private AuctionItem item;
 
+    @Column(name = "is_read", nullable = false)
+    private boolean read = false;
+
     @PrePersist
     protected void onCreate() {
         this.timestamp = LocalDateTime.now();

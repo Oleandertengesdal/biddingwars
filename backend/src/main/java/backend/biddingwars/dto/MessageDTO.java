@@ -34,5 +34,8 @@ public record MessageDTO(
         LocalDateTime timestamp,
         
         @Schema(description = "Related auction item ID", example = "10")
-        Long itemId
+        Long itemId,
+        
+        @Schema(description = "Whether the message has been read")
+        boolean read
 ) {}
