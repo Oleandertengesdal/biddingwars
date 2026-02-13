@@ -1,8 +1,8 @@
 package backend.biddingwars.repository;
 
-import backend.biddingwars.model.AuctionItem;
-import backend.biddingwars.model.Status;
-import backend.biddingwars.model.User;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,8 +10,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
-import java.util.List;
+import backend.biddingwars.model.AuctionItem;
+import backend.biddingwars.model.Status;
+import backend.biddingwars.model.User;
 
 /**
  * Repository interface for AuctionItem entities.
@@ -87,4 +88,9 @@ public interface AuctionItemRepository extends JpaRepository<AuctionItem, Long> 
      * Count active auctions for a specific user.
      */
     long countByOwnerIdAndStatus(Long ownerId, Status status);
+
+    /**
+     * Count total auctions for a specific user (all statuses).
+     */
+    long countByOwnerId(Long ownerId);
 }

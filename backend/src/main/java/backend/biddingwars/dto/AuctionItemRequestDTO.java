@@ -1,11 +1,18 @@
 package backend.biddingwars.dto;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 /**
  * Auction Item Request Data Transfer Object
@@ -50,5 +57,15 @@ public record AuctionItemRequestDTO(
         Double latitude,
         
         @Schema(description = "Longitude for pickup location", example = "10.3951")
-        Double longitude
+        Double longitude,
+        
+        @Schema(description = "Anti-snipe extension minutes (null to disable)", example = "5")
+        @Min(value = 1, message = "Anti-snipe minutes must be at least 1")
+        @Max(value = 30, message = "Anti-snipe minutes cannot exceed 30")
+        Integer antiSnipeMinutes,
+        
+        @Schema(description = "Anti-snipe trigger threshold in seconds (default 300)", example = "300")
+        @Min(value = 30, message = "Anti-snipe threshold must be at least 30 seconds")
+        @Max(value = 900, message = "Anti-snipe threshold cannot exceed 900 seconds")
+        Integer antiSnipeThresholdSeconds
 ) {}

@@ -19,11 +19,16 @@ import backend.biddingwars.exception.UnauthorizedException;
 import backend.biddingwars.exception.ValidationException;
 import backend.biddingwars.mapper.AuctionItemMapper;
 import backend.biddingwars.model.AuctionItem;
+import backend.biddingwars.model.Bid;
 import backend.biddingwars.model.Category;
+import backend.biddingwars.model.Purchase;
+import backend.biddingwars.model.PurchaseStatus;
 import backend.biddingwars.model.Status;
 import backend.biddingwars.model.User;
 import backend.biddingwars.repository.AuctionItemRepository;
+import backend.biddingwars.repository.BidRepository;
 import backend.biddingwars.repository.CategoryRepository;
+import backend.biddingwars.repository.PurchaseRepository;
 import jakarta.persistence.OptimisticLockException;
 
 /**
@@ -42,13 +47,22 @@ public class AuctionItemService {
 
     private final AuctionItemRepository auctionItemRepository;
     private final CategoryRepository categoryRepository;
+    private final BidRepository bidRepository;
+    private final PurchaseRepository purchaseRepository;
     private final AuctionItemMapper auctionItemMapper;
+    
+    // Payment deadline in hours (48 hours = 2 days)
+    private static final int PAYMENT_DEADLINE_HOURS = 48;
 
     public AuctionItemService(AuctionItemRepository auctionItemRepository,
                               CategoryRepository categoryRepository,
+                              BidRepository bidRepository,
+                              PurchaseRepository purchaseRepository,
                               AuctionItemMapper auctionItemMapper) {
         this.auctionItemRepository = auctionItemRepository;
         this.categoryRepository = categoryRepository;
+        this.bidRepository = bidRepository;
+        this.purchaseRepository = purchaseRepository;
         this.auctionItemMapper = auctionItemMapper;
     }
 
@@ -310,6 +324,7 @@ public class AuctionItemService {
     /**
      * Ends an auction and determines if it was sold.
      * Called when auction end time is reached.
+     * Creates a Purchase record if there were bids.
      *
      * @param id the auction ID
      */
@@ -323,13 +338,51 @@ public class AuctionItemService {
         // Determine final status based on whether there were bids
         if (auctionItem.getBids() != null && !auctionItem.getBids().isEmpty()) {
             auctionItem.setStatus(Status.SOLD);
-            logger.info("Auction {} ended - SOLD", id);
+            auctionItemRepository.save(auctionItem);
+            
+            // Create purchase record for the winner
+            createPurchaseForAuction(auctionItem);
+            
+            logger.info("Auction {} ended - SOLD, purchase created", id);
         } else {
             auctionItem.setStatus(Status.INACTIVE);
+            auctionItemRepository.save(auctionItem);
             logger.info("Auction {} ended - NO BIDS", id);
         }
-
-        auctionItemRepository.save(auctionItem);
+    }
+    
+    /**
+     * Creates a purchase record when an auction ends with bids.
+     *
+     * @param auctionItem the auction that was sold
+     */
+    private void createPurchaseForAuction(AuctionItem auctionItem) {
+        // Get the winning bid
+        Bid winningBid = bidRepository.findHighestBidForItem(auctionItem.getId())
+                .orElseThrow(() -> new IllegalStateException("No bids found for sold auction"));
+        
+        // Check if purchase already exists
+        if (purchaseRepository.findByAuctionItemId(auctionItem.getId()).isPresent()) {
+            logger.warn("Purchase already exists for auction {}, skipping", auctionItem.getId());
+            return;
+        }
+        
+        // Create purchase
+        Purchase purchase = new Purchase();
+        purchase.setAuctionItem(auctionItem);
+        purchase.setSeller(auctionItem.getOwner());
+        purchase.setBuyer(winningBid.getBidder());
+        purchase.setAmount(winningBid.getAmount());
+        purchase.setStatus(PurchaseStatus.PENDING_PAYMENT);
+        purchase.setPurchaseDate(LocalDateTime.now());
+        purchase.setPaymentDeadline(LocalDateTime.now().plusHours(PAYMENT_DEADLINE_HOURS));
+        purchase.setPaymentDefaulted(false);
+        
+        purchaseRepository.save(purchase);
+        
+        logger.info("Purchase created for auction {} - buyer: {}, amount: {}, deadline: {}",
+                auctionItem.getId(), winningBid.getBidder().getUsername(),
+                winningBid.getAmount(), purchase.getPaymentDeadline());
     }
 
     /**

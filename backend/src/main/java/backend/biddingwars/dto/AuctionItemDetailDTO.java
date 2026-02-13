@@ -1,9 +1,10 @@
 package backend.biddingwars.dto;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import io.swagger.v3.oas.annotations.media.Schema;
 
 /**
  * Auction Item Detail Data Transfer Object.
@@ -61,5 +62,17 @@ public record AuctionItemDetailDTO(
         Double longitude,
         
         @Schema(description = "Whether auction is currently active")
-        boolean isActive
+        boolean isActive,
+        
+        @Schema(description = "Anti-snipe extension minutes (null if disabled)")
+        Integer antiSnipeMinutes,
+        
+        @Schema(description = "Anti-snipe trigger threshold in seconds")
+        Integer antiSnipeThresholdSeconds,
+        
+        @Schema(description = "Number of times auction was extended due to anti-snipe")
+        int extensionCount,
+        
+        @Schema(description = "Original end time before any extensions")
+        LocalDateTime originalEndTime
 ) {}
