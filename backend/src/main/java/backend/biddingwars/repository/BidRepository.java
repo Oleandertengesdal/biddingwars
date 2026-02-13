@@ -1,6 +1,9 @@
 package backend.biddingwars.repository;
 
-import backend.biddingwars.model.Bid;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,9 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
+import backend.biddingwars.model.Bid;
 
 /**
  * Repository interface for Bid entities.
@@ -92,4 +93,12 @@ public interface BidRepository extends JpaRepository<Bid, Long> {
      * @return true if user has bid on this item
      */
     boolean existsByBidderIdAndAuctionItemId(Long bidderId, Long itemId);
+
+    /**
+     * Count total bids placed by a specific user.
+     *
+     * @param bidderId the bidder's user ID
+     * @return total number of bids
+     */
+    long countByBidderId(Long bidderId);
 }

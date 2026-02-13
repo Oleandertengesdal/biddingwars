@@ -2,6 +2,7 @@ package backend.biddingwars.service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -17,7 +18,6 @@ import backend.biddingwars.exception.ConcurrentBidException;
 import backend.biddingwars.exception.InvalidOperationException;
 import backend.biddingwars.exception.ResourceNotFoundException;
 import backend.biddingwars.exception.ValidationException;
-import jakarta.persistence.OptimisticLockException;
 import backend.biddingwars.mapper.BidMapper;
 import backend.biddingwars.model.AuctionItem;
 import backend.biddingwars.model.Bid;
@@ -25,6 +25,7 @@ import backend.biddingwars.model.Status;
 import backend.biddingwars.model.User;
 import backend.biddingwars.repository.AuctionItemRepository;
 import backend.biddingwars.repository.BidRepository;
+import jakarta.persistence.OptimisticLockException;
 
 /**
  * Service class for bid operations.
@@ -70,6 +71,14 @@ public class BidService {
     public BidDTO placeBid(BidRequestDTO bidRequest, User bidder) {
         logger.info("User {} placing bid of {} on auction {}", 
                 bidder.getUsername(), bidRequest.amount(), bidRequest.itemId());
+
+        // === VALIDATION 0: Check if user is banned ===
+        if (isUserBanned(bidder)) {
+            String banMessage = bidder.isPermanentBan() 
+                    ? "Your account is permanently banned." 
+                    : "Your account is banned until " + bidder.getBannedUntil();
+            throw new InvalidOperationException(banMessage + " Reason: " + bidder.getBanReason());
+        }
 
         // Find the auction item
         AuctionItem auctionItem = auctionItemRepository.findById(bidRequest.itemId())
@@ -133,6 +142,28 @@ public class BidService {
                     auctionItem.getId(), bidder.getUsername());
             throw new ConcurrentBidException(
                     "Another bid was placed at the same time. Please refresh and try again.");
+        }
+
+        // After saving bid, check anti-snipe:
+        if (auctionItem.getAntiSnipeMinutes() != null) {
+            long secondsRemaining = ChronoUnit.SECONDS.between(
+            LocalDateTime.now(), 
+            auctionItem.getAuctionEndTime()
+        );
+    
+        if (secondsRemaining < auctionItem.getAntiSnipeThresholdSeconds()) {
+            // Extend auction
+            auctionItem.setAuctionEndTime(
+                auctionItem.getAuctionEndTime().plusMinutes(
+                    auctionItem.getAntiSnipeMinutes()
+                )
+            );
+            auctionItem.setExtensionCount(auctionItem.getExtensionCount() + 1);
+            auctionItemRepository.save(auctionItem);
+        
+            logger.info("Anti-snipe triggered: Auction {} extended by {} minutes", 
+            auctionItem.getId(), auctionItem.getAntiSnipeMinutes());
+            }
         }
 
         logger.info("Bid placed successfully: {} on auction {} by user {}", 
@@ -244,5 +275,21 @@ public class BidService {
     @Transactional(readOnly = true)
     public long getBidCount(Long itemId) {
         return bidRepository.countByAuctionItemId(itemId);
+    }
+
+    /**
+     * Check if a user is currently banned.
+     *
+     * @param user the user to check
+     * @return true if user is banned
+     */
+    private boolean isUserBanned(User user) {
+        if (user.isPermanentBan()) {
+            return true;
+        }
+        if (user.getBannedUntil() != null) {
+            return user.getBannedUntil().isAfter(LocalDateTime.now());
+        }
+        return false;
     }
 }
